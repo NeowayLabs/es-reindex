@@ -175,7 +175,7 @@ func getESClient(esURL string) (*elastic.Client, error) {
 	return esClient, err
 }
 
-var progress = 0
+var progress = -1
 
 func showReindexProgress(current, total int64) {
 	percent := (float64(current) / float64(total)) * 100
