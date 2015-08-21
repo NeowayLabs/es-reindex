@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
@@ -109,6 +110,10 @@ func main() {
 		}
 
 		logger.Info("New index <%s> was created!", toIndex)
+	} else {
+		if !askForConfirmation(fmt.Sprintf("Index <%s> already exists, do you want overwrite? (yes/no) ", toIndex)) {
+			os.Exit(0)
+		}
 	}
 
 	// Reindex fromIndex to toIndex
@@ -176,4 +181,50 @@ func showReindexProgress(current, total int64) {
 	if int64(percent) == int64(math.Ceil(percent)) {
 		logger.Info("Reindexing... %d%%", int64(percent))
 	}
+}
+
+// Based in: https://gist.github.com/albrow/5882501
+
+// askForConfirmation uses Scanln to parse user input. A user must type in "yes" or "no" and
+// then press enter. It has fuzzy matching, so "y", "Y", "yes", "YES", and "Yes" all count as
+// confirmations. If the input is not recognized, it will ask again. The function does not return
+// until it gets a valid response from the user. Typically, you should use fmt to print out a question
+// before calling askForConfirmation. E.g. fmt.Println("WARNING: Are you sure? (yes/no)")
+func askForConfirmation(message string) bool {
+	fmt.Printf(message)
+
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+
+	yesResponses := []string{"y", "Y", "yes", "Yes", "YES"}
+	noResponses := []string{"n", "N", "no", "No", "NO"}
+
+	if containsString(yesResponses, response) {
+		return true
+	} else if containsString(noResponses, response) {
+		return false
+	} else {
+		return askForConfirmation(message)
+	}
+}
+
+// You might want to put the following two functions in a separate utility package.
+
+// posString returns the first index of element in slice.
+// If slice does not contain element, returns -1.
+func posString(slice []string, element string) int {
+	for index, elem := range slice {
+		if elem == element {
+			return index
+		}
+	}
+	return -1
+}
+
+// containsString returns true iff slice contains element
+func containsString(slice []string, element string) bool {
+	return !(posString(slice, element) == -1)
 }
