@@ -37,7 +37,7 @@ func main() {
 
 	mappingBytes, err := ioutil.ReadFile(mappingFile)
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error reading mapping file: %+v", err.Error())
 	}
 
 	mappingContent := string(mappingBytes)
@@ -55,13 +55,13 @@ func main() {
 		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).InfoLogger),
 	)
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error connecting to ES: %+v", err.Error())
 	}
 
 	// Verify if index exists
 	exists, err := esClient.IndexExists(index).Do()
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error verifying if index exists: %+v", err.Error())
 	}
 	if !exists {
 		logger.Fatal("The index <%s> doesn't exists, pass an index or alias already created", index)
@@ -70,7 +70,7 @@ func main() {
 	// Verify if newIndex already exists
 	exists, err = esClient.IndexExists(newIndex).Do()
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error verifying if newIndex exists: %+v", err.Error())
 	}
 	if exists {
 		logger.Fatal("The newIndex <%s> already exists, pass the name of NEW index", newIndex)
@@ -79,14 +79,14 @@ func main() {
 	// Get Elastic Search version
 	esVersion, err := esClient.ElasticsearchVersion(elasticSearchAddr)
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error getting ES version: %+v", err.Error())
 	}
 	logger.Info("Elasticsearch version %s", esVersion)
 
 	// Create newIndex using mapping-file content
 	createNewIndex, err := esClient.CreateIndex(newIndex).Body(mappingContent).Do()
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error creating newIndex: %+v", err.Error())
 	}
 	if !createNewIndex.Acknowledged {
 		logger.Fatal("Was not possible create new index <%s>", newIndex)
@@ -99,7 +99,7 @@ func main() {
 
 	resp, err := reindexer.Do()
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error trying reindexing: %+v", err.Error())
 	}
 
 	logger.Info("Reindexed was completed %d documents successed and %d failed", resp.Success, resp.Failed)
@@ -108,7 +108,7 @@ func main() {
 	aliasesService := esClient.Aliases()
 	aliases, err := aliasesService.Do()
 	if err != nil {
-		logger.Fatal(err.Error())
+		logger.Fatal("Error getting aliases: %+v", err.Error())
 	}
 
 	indices := aliases.IndicesByAlias(index)
@@ -119,7 +119,7 @@ func main() {
 		}
 		_, err = aliasService.Add(newIndex, index).Do()
 		if err != nil {
-			logger.Fatal(err.Error())
+			logger.Fatal("Error updating aliases:  %+v", err.Error())
 		}
 
 		logger.Info("As <%s> is a index, %+v was removed and alias now point to: <%s>", index, indices, newIndex)
