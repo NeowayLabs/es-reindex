@@ -179,8 +179,8 @@ var progress = 0
 
 func showReindexProgress(current, total int64) {
 	percent := (float64(current) / float64(total)) * 100
-	if int64(percent) > progress {
-		progress = int64(percent)
+	if int(percent) > progress {
+		progress = int(percent)
 		logger.Info("Reindexing... %d%%", progress)
 	}
 }
