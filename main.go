@@ -13,91 +13,113 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 )
 
-const elasticSearchAddr = "http://127.0.0.1:9200"
+const defaultElasticSearch = "http://127.0.0.1:9200"
 
 var (
-	index       string
-	mappingFile string
-	newIndex    string
+	fromHost       string
+	fromIndex      string
+	toHost         string
+	toIndex        string
+	newMapping     string
+	mappingContent string
+	bulkSize       int
 )
 
 func main() {
-	flag.StringVar(&index, "index", "", "name of index to reindex")
-	flag.StringVar(&mappingFile, "mapping-file", "", "path from mapping file of new index")
-	flag.StringVar(&newIndex, "new-index", "", "name of new index with data reindexed, default will be <index-name>-<uuid>")
+	flag.StringVar(&fromHost, "from-host", defaultElasticSearch, "elastic search host to get data from")
+	flag.StringVar(&fromIndex, "index", "", "name of index to reindex/copy")
+	flag.StringVar(&toHost, "to-host", defaultElasticSearch, "elastic search host to get data from")
+	flag.StringVar(&toIndex, "new-index", "", "name of new-index")
+	flag.StringVar(&newMapping, "new-mapping", "", "path to new mapping file of new-index")
+	flag.IntVar(&bulkSize, "bulk-size", 0, "amount of data to get in each request")
 
 	flag.Parse()
 
-	if index == "" || mappingFile == "" {
-		logger.Error("The parameters -index and -mapping-file are required to reindex")
+	if fromIndex == "" {
+		logger.Error("The `-index` parameters are required to reindex/copy")
 
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	mappingBytes, err := ioutil.ReadFile(mappingFile)
-	if err != nil {
-		logger.Fatal("Error reading mapping file: %+v", err.Error())
+	// Read new mapping file
+	if newMapping != "" {
+		mappingBytes, err := ioutil.ReadFile(newMapping)
+		if err != nil {
+			logger.Fatal("Error reading mapping file: %+v", err.Error())
+		}
+
+		mappingContent = string(mappingBytes)
+		logger.Debug("New mapping of %s:", newMapping)
+		logger.Debug(mappingContent)
+		logger.Debug("")
 	}
 
-	mappingContent := string(mappingBytes)
-	logger.Debug("Mapping content:")
-	logger.Debug(mappingContent)
-	logger.Debug("")
-
-	if newIndex == "" {
-		newIndex = index + "-" + uuid.New()[24:]
+	// Set default toIndex
+	if toIndex == "" {
+		toIndex = fromIndex + "-" + uuid.New()[24:]
 	}
 
-	esClient, err := elastic.NewClient(
-		elastic.SetURL(elasticSearchAddr),
-		elastic.SetSniff(false),
-		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).ErrorLogger),
-		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).InfoLogger),
-		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
-	)
+	// Connect to clients
+	fromClient, err := getESClient(fromHost)
 	if err != nil {
-		logger.Fatal("Error connecting to ES: %+v", err.Error())
+		logger.Fatal("Error connecting to `%s`: %+v", fromHost, err.Error())
 	}
 
-	// Verify if index exists
-	exists, err := esClient.IndexExists(index).Do()
+	toClient, err := getESClient(toHost)
 	if err != nil {
-		logger.Fatal("Error verifying if index exists: %+v", err.Error())
+		logger.Fatal("Error connecting to `%s`: %+v", toHost, err.Error())
+	}
+
+	// Verify if fromIndex exists
+	exists, err := fromClient.IndexExists(fromIndex).Do()
+	if err != nil {
+		logger.Fatal("Error verifying if index <%s> exists: %+v", fromIndex, err.Error())
 	}
 	if !exists {
-		logger.Fatal("The index <%s> doesn't exists, pass an index or alias already created", index)
+		logger.Fatal("The index <%s> doesn't exists, we need a valid index or alias", fromIndex)
 	}
 
-	// Verify if newIndex already exists
-	exists, err = esClient.IndexExists(newIndex).Do()
+	// Verify if toIndex already exists
+	exists, err = toClient.IndexExists(toIndex).Do()
 	if err != nil {
-		logger.Fatal("Error verifying if newIndex exists: %+v", err.Error())
-	}
-	if exists {
-		logger.Fatal("The newIndex <%s> already exists, pass the name of NEW index", newIndex)
+		logger.Fatal("Error verifying if index <%s> exists: %+v", toIndex, err.Error())
 	}
 
-	// Get Elastic Search version
-	esVersion, err := esClient.ElasticsearchVersion(elasticSearchAddr)
-	if err != nil {
-		logger.Fatal("Error getting ES version: %+v", err.Error())
-	}
-	logger.Info("Elasticsearch version %s", esVersion)
+	// If toIndex don't exists we need create it
+	if !exists {
+		indexService := toClient.CreateIndex(toIndex)
+		// If -new-mapping was not provided use original mapping
+		if newMapping == "" {
+			mapping, err := fromClient.GetMapping().Index(fromIndex).Do()
+			if err != nil {
+				logger.Fatal("Error getting mapping of index <%s>", fromIndex)
+			}
 
-	// Create newIndex using mapping-file content
-	createNewIndex, err := esClient.CreateIndex(newIndex).Body(mappingContent).Do()
-	if err != nil {
-		logger.Fatal("Error creating newIndex: %+v", err.Error())
-	}
-	if !createNewIndex.Acknowledged {
-		logger.Fatal("Was not possible create new index <%s>", newIndex)
-	}
-	logger.Info("New index <%s> was created!", newIndex)
+			indexService.BodyJson(mapping)
+		} else {
+			indexService.BodyString(mappingContent)
+		}
 
-	// Reindex index to newIndex
-	reindexer := esClient.Reindex(index, newIndex)
+		createNewIndex, err := indexService.Do()
+		if err != nil {
+			logger.Fatal("Error creating new index <%s>: %+v", toIndex, err.Error())
+		}
+		if !createNewIndex.Acknowledged {
+			logger.Fatal("Was not possible create new index <%s>", toIndex)
+		}
+
+		logger.Info("New index <%s> was created!", toIndex)
+	}
+
+	// Reindex fromIndex to toIndex
+	reindexer := fromClient.Reindex(fromIndex, toIndex)
+	reindexer.TargetClient(toClient)
 	reindexer.Progress(showReindexProgress)
+
+	if bulkSize > 0 {
+		reindexer.BulkSize(bulkSize)
+	}
 
 	resp, err := reindexer.Do()
 	if err != nil {
@@ -107,25 +129,47 @@ func main() {
 	logger.Info("Reindexed was completed %d documents successed and %d failed", resp.Success, resp.Failed)
 
 	// If index is a alias, update its reference
-	aliasesService := esClient.Aliases()
+	aliasesService := toClient.Aliases()
 	aliases, err := aliasesService.Do()
 	if err != nil {
 		logger.Fatal("Error getting aliases: %+v", err.Error())
 	}
 
-	indices := aliases.IndicesByAlias(index)
+	indices := aliases.IndicesByAlias(fromIndex)
 	if len(indices) > 0 {
-		aliasService := esClient.Alias()
-		for _, v := range indices {
-			aliasService = aliasService.Remove(v, index)
+		aliasService := toClient.Alias()
+		for _, index := range indices {
+			aliasService.Remove(index, fromIndex)
 		}
-		_, err = aliasService.Add(newIndex, index).Do()
+		_, err = aliasService.Add(toIndex, fromIndex).Do()
 		if err != nil {
-			logger.Fatal("Error updating aliases:  %+v", err.Error())
+			logger.Fatal("Error updating alias <%s>:  %+v", fromIndex, err.Error())
 		}
 
-		logger.Info("As <%s> is a alias, %+v was removed and alias now point to: <%s>", index, indices, newIndex)
+		logger.Info("Alias <%s>: %+v was removed and now point to: <%s>", fromIndex, indices, toIndex)
 	}
+}
+
+func getESClient(esURL string) (*elastic.Client, error) {
+	esClient, err := elastic.NewClient(
+		elastic.SetURL(esURL),
+		elastic.SetSniff(false),
+		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).ErrorLogger),
+		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).InfoLogger),
+		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
+	)
+
+	if err != nil {
+		return esClient, err
+	}
+
+	esVersion, err := esClient.ElasticsearchVersion(esURL)
+	if err != nil {
+		logger.Fatal("Error getting ES version: %+v", err.Error())
+	}
+	logger.Info("Connected in Elasticsearch <%s>, version %s", esURL, esVersion)
+
+	return esClient, err
 }
 
 func showReindexProgress(current, total int64) {
