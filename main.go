@@ -31,7 +31,7 @@ func main() {
 	flag.StringVar(&toHost, "to-host", defaultElasticSearch, "elastic search host to get data from")
 	flag.StringVar(&toIndex, "new-index", "", "name of new-index")
 	flag.StringVar(&newMapping, "new-mapping", "", "path to new mapping file of new-index")
-	flag.IntVar(&bulkSize, "bulk-size", 0, "amount of data to get in each request")
+	flag.IntVar(&bulkSize, "bulk-size", 500, "amount of data to get in each request")
 
 	flag.Parse()
 
