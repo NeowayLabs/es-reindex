@@ -52,7 +52,9 @@ func main() {
 	esClient, err := elastic.NewClient(
 		elastic.SetURL(elasticSearchAddr),
 		elastic.SetSniff(false),
-		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).InfoLogger),
+		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).ErrorLogger),
+		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).InfoLogger),
+		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
 	)
 	if err != nil {
 		logger.Fatal("Error connecting to ES: %+v", err.Error())
