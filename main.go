@@ -122,7 +122,7 @@ func main() {
 			logger.Fatal("Error updating aliases:  %+v", err.Error())
 		}
 
-		logger.Info("As <%s> is a index, %+v was removed and alias now point to: <%s>", index, indices, newIndex)
+		logger.Info("As <%s> is a alias, %+v was removed and alias now point to: <%s>", index, indices, newIndex)
 	}
 }
 
