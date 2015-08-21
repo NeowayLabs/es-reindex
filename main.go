@@ -95,6 +95,10 @@ func main() {
 				logger.Fatal("Error getting mapping of index <%s>", fromIndex)
 			}
 
+			for _, v := range mapping {
+				mapping = v.(map[string]interface{})
+			}
+
 			indexService.BodyJson(mapping)
 		} else {
 			indexService.BodyString(mappingContent)
@@ -114,6 +118,8 @@ func main() {
 			os.Exit(0)
 		}
 	}
+
+	return
 
 	// Reindex fromIndex to toIndex
 	reindexer := fromClient.Reindex(fromIndex, toIndex)
