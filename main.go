@@ -52,7 +52,6 @@ func main() {
 		mappingContent = string(mappingBytes)
 		logger.Debug("New mapping of %s:", newMapping)
 		logger.Debug(mappingContent)
-		logger.Debug("")
 	}
 
 	// Set default toIndex
@@ -155,7 +154,7 @@ func getESClient(esURL string) (*elastic.Client, error) {
 		elastic.SetURL(esURL),
 		elastic.SetSniff(false),
 		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).ErrorLogger),
-		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).InfoLogger),
+		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
 		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
 	)
 
