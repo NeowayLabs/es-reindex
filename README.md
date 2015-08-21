@@ -7,3 +7,26 @@ suggest how you can reindex and using aliases to zero downtime.
 
 That situation it's very common in your environment, so We decide to implement a Go tool to reindex our indices an
 update the aliases.
+
+## Usage
+
+./es-reindex \
+    -from-host=<source-elastic-search> \
+    -index=<index-name> \
+    -to-host=<destination-elastic-search> \
+    -new-mapping=<new-mapping-file>
+    -new-index=<new-index-name> \
+    -bulk-size=<bulk-size>
+
+* **-from-host:** source of data to copy/reindex **<required>**
+
+* **-to-host:** destination of data where copy/reindex **<required>**
+
+* **-index:** name of index to copy/reindex **<required>**
+
+* **-new-index:** name of new index, if not present will be used <index-name>-UUID (for example: tweets-e0ce1c89579f)
+**<optional>**
+
+* **-new-mapping:** path to mapping of new-index, if not present the original map will be used **<optional>**
+
+* **-bulk-size:** number of documents of each request, default is 500 **<optional>**
