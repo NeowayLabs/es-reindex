@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v2"
 
-	"gitlab.neoway.com.br/severino/logger"
+	"github.com/NeowayLabs/logger"
 
 	"code.google.com/p/go-uuid/uuid"
 )
