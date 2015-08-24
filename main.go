@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/olivere/elastic"
+	"gopkg.in/olivere/elastic.v2"
 
 	"gitlab.neoway.com.br/severino/logger"
 
