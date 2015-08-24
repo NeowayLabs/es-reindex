@@ -119,8 +119,6 @@ func main() {
 		}
 	}
 
-	return
-
 	// Reindex fromIndex to toIndex
 	reindexer := fromClient.Reindex(fromIndex, toIndex)
 	reindexer.TargetClient(toClient)
