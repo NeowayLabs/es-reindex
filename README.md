@@ -5,11 +5,12 @@ mapping of any field, you should reindex all your information over and over agai
 without downtime. We found this [good article](https://www.elastic.co/blog/changing-mapping-with-zero-downtime) that
 suggest how you can reindex and using aliases to zero downtime.
 
-That situation it's very common in your environment, so We decide to implement a Go tool to reindex our indices an
+That situation it's very common in our environment, so We decide to implement a Go tool to reindex our indices an
 update the aliases.
 
 ## Usage
 
+```
 ./es-reindex \
     -from-host=<source-elastic-search> \
     -index=<index-name> \
@@ -17,6 +18,7 @@ update the aliases.
     -new-mapping=<new-mapping-file>
     -new-index=<new-index-name> \
     -bulk-size=<bulk-size>
+```
 
 * **-from-host:** source of data to copy/reindex **<required>**
 
@@ -24,7 +26,7 @@ update the aliases.
 
 * **-index:** name of index to copy/reindex **<required>**
 
-* **-new-index:** name of new index, if not present will be used <index-name>-UUID (for example: tweets-e0ce1c89579f)
+* **-new-index:** name of new index, if not present will be used *index-name*-*UUID* (for example: tweets-e0ce1c89579f)
 **<optional>**
 
 * **-new-mapping:** path to mapping of new-index, if not present the original map will be used **<optional>**
