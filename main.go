@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/olivere/elastic"
 
@@ -128,12 +129,14 @@ func main() {
 		reindexer.BulkSize(bulkSize)
 	}
 
+	logger.Info("Starting reindexing...")
+	reindexStart = time.Now()
 	resp, err := reindexer.Do()
 	if err != nil {
 		logger.Fatal("Error trying reindexing: %+v", err.Error())
 	}
 
-	logger.Info("Reindexed was completed %d documents successed and %d failed", resp.Success, resp.Failed)
+	logger.Info("Reindexed was completed in <%s>, %d documents successed and %d failed", time.Since(reindexStart), resp.Success, resp.Failed)
 
 	// If index is a alias, update its reference
 	aliasesService := toClient.Aliases()
@@ -179,13 +182,16 @@ func getESClient(esURL string) (*elastic.Client, error) {
 	return esClient, err
 }
 
-var progress = -1
+var (
+	reindexProgress = -1
+	reindexStart    time.Time
+)
 
 func showReindexProgress(current, total int64) {
 	percent := (float64(current) / float64(total)) * 100
-	if int(percent) > progress {
-		progress = int(percent)
-		logger.Info("Reindexing... %d%%", progress)
+	if int(percent) > reindexProgress {
+		reindexProgress = int(percent)
+		logger.Info("Reindexing... %d%% [Time elapsed: %s]", reindexProgress, time.Since(reindexStart).String())
 	}
 }
 
