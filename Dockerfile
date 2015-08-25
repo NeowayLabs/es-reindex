@@ -6,4 +6,4 @@ ADD ./es-reindex /opt/es-reindex/bin/
 
 WORKDIR /opt/es-reindex/bin
 
-CMD ["/opt/es-reindex/bin/es-reindex"]
+ENTRYPOINT ["./es-reindex"] 
