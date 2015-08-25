@@ -138,6 +138,14 @@ func main() {
 
 	logger.Info("Reindexed was completed in <%s>, %d documents successed and %d failed", time.Since(reindexStart), resp.Success, resp.Failed)
 
+	if len(resp.Errors) > 0 {
+		logger.Warn("We get errors in some documents...")
+
+		for _, respItem := range resp.Errors {
+			logger.Error("Index[%s] Type[%s] Id[%s]: %s", respItem.Index, respItem.Type, respItem.Id, respItem.Error)
+		}
+	}
+
 	// If index is a alias, update its reference
 	aliasesService := toClient.Aliases()
 	aliases, err := aliasesService.Do()
