@@ -98,6 +98,17 @@ func main() {
 
 			for _, v := range mapping {
 				mapping = v.(map[string]interface{})
+				break
+			}
+
+			resp, err := fromClient.IndexGetSettings().Index(fromIndex).Do()
+			if err != nil {
+				logger.Fatal("Error getting settings of index <%s>", fromIndex)
+			}
+
+			for _, v := range resp {
+				mapping["settings"] = v.Settings
+				break
 			}
 
 			indexService.BodyJson(mapping)
