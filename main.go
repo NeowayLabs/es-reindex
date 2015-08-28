@@ -115,7 +115,7 @@ func main() {
 
 		logger.Info("New index <%s> was created!", toIndex)
 	} else {
-		if !askForConfirmation(fmt.Sprintf("Index <%s> already exists, do you want overwrite? (yes/no) ", toIndex)) {
+		if !askForConfirmation(fmt.Sprintf("Index <%s> already exists, do you want index all documents without change the current mapping? (yes/no) ", toIndex)) {
 			os.Exit(0)
 		}
 	}
