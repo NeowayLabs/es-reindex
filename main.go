@@ -227,7 +227,7 @@ func askForConfirmation(message string) bool {
 	var response string
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		logger.Fatal("Cannot read from stdin: ", err.Error())
+		logger.Fatal("Cannot read from stdin: %s", err.Error())
 	}
 
 	yesResponses := []string{"y", "Y", "yes", "Yes", "YES"}
