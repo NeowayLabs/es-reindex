@@ -24,6 +24,8 @@ var (
 	newMapping     string
 	mappingContent string
 	bulkSize       int
+	forceYes       bool
+	forceNo        bool
 )
 
 func main() {
@@ -33,6 +35,8 @@ func main() {
 	flag.StringVar(&toIndex, "new-index", "", "name of new-index")
 	flag.StringVar(&newMapping, "new-mapping", "", "path to new mapping file of new-index")
 	flag.IntVar(&bulkSize, "bulk-size", 500, "amount of data to get in each request")
+	flag.BoolVar(&forceYes, "force-yes", false, "even if destination alias already exists continue reindexing")
+	flag.BoolVar(&forceNo, "force-no", false, "if destination alias already exists abort reindexing")
 
 	flag.Parse()
 
@@ -125,7 +129,9 @@ func main() {
 		}
 
 		logger.Info("New index <%s> was created!", toIndex)
-	} else {
+	} else if forceNo {
+		logger.Fatal("Index <%s> already exists in destination server", toIndex)
+	} else if !forceYes {
 		if !askForConfirmation(fmt.Sprintf("Index <%s> already exists, do you want index all documents without change the current mapping? (yes/no) ", toIndex)) {
 			os.Exit(0)
 		}
