@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"gopkg.in/olivere/elastic.v2"
+	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/NeowayLabs/logger"
 
@@ -159,7 +159,7 @@ func main() {
 		logger.Warn("We get errors in some documents...")
 
 		for _, respItem := range resp.Errors {
-			logger.Error("Index[%s] Type[%s] Id[%s]: %s", respItem.Index, respItem.Type, respItem.Id, respItem.Error)
+			logger.Error("Index[%s] Type[%s] Id[%s]: %+v", respItem.Index, respItem.Type, respItem.Id, respItem.Error)
 		}
 	}
 
