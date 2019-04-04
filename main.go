@@ -11,7 +11,7 @@ import (
 
 	"github.com/NeowayLabs/logger"
 
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/pborman/uuid"
 )
 
 const defaultElasticSearch = "http://127.0.0.1:9200"
@@ -189,9 +189,9 @@ func getESClient(esURL string) (*elastic.Client, error) {
 	esClient, err := elastic.NewClient(
 		elastic.SetURL(esURL),
 		elastic.SetSniff(false),
-		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).ErrorLogger),
-		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
-		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
+		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.StdOutHandler).ErrorLogger),
+		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.StdOutHandler).DebugLogger),
+		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.StdOutHandler).DebugLogger),
 	)
 
 	if err != nil {
