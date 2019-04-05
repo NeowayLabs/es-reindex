@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"gopkg.in/olivere/elastic.v2"
+	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/NeowayLabs/logger"
 
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/pborman/uuid"
 )
 
 const defaultElasticSearch = "http://127.0.0.1:9200"
@@ -159,7 +159,7 @@ func main() {
 		logger.Warn("We get errors in some documents...")
 
 		for _, respItem := range resp.Errors {
-			logger.Error("Index[%s] Type[%s] Id[%s]: %s", respItem.Index, respItem.Type, respItem.Id, respItem.Error)
+			logger.Error("Index[%s] Type[%s] Id[%s]: %+v", respItem.Index, respItem.Type, respItem.Id, respItem.Error)
 		}
 	}
 
@@ -189,9 +189,9 @@ func getESClient(esURL string) (*elastic.Client, error) {
 	esClient, err := elastic.NewClient(
 		elastic.SetURL(esURL),
 		elastic.SetSniff(false),
-		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).ErrorLogger),
-		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
-		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.DefaultHandler).DebugLogger),
+		elastic.SetErrorLog(logger.DefaultLogger.Handlers[0].(*logger.StdOutHandler).ErrorLogger),
+		elastic.SetInfoLog(logger.DefaultLogger.Handlers[0].(*logger.StdOutHandler).DebugLogger),
+		elastic.SetTraceLog(logger.DefaultLogger.Handlers[0].(*logger.StdOutHandler).DebugLogger),
 	)
 
 	if err != nil {
